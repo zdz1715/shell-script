@@ -21,8 +21,7 @@
 
 
 ```shell script
-    export url='https://github.com/zdz1715/shell-script/blob/master/devops/docker/local-smooth-upgrade.sh'
     export docker_tag=v1.0
     export docker_warehouse=registry.cn-hangzhou.aliyuncs.com/xx/xx
-    DOCKER_WAREHOUSE=$docker_warehouse DOCKER_TAG=$docker_tag PROJECT_NAME=xx /bin/bash -c "$(curl -s $url)"
+    DOCKER_WAREHOUSE=$docker_warehouse DOCKER_TAG=$docker_tag PROJECT_NAME=xx /bin/bash -c "$(curl -s  https://raw.githubusercontent.com/zdz1715/shell-script/master/devops/docker/local-smooth-upgrade.sh)"
 ```
