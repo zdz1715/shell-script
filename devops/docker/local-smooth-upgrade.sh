@@ -187,6 +187,8 @@ EOF"
     log_command "CURRENT_CONTAINER_IP=\$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${CURRENT_CONTAINER_NAME})" 1
     CURRENT_CONTAINER_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' "${CURRENT_CONTAINER_NAME}")
 
+    log_info "CURRENT_CONTAINER_IP=${CURRENT_CONTAINER_IP}"
+
     if [[ -z "${CURRENT_CONTAINER_IP}" ]]; then
       log_error "获取不到当前容器运行的ip"
       docker_rm "${CONTAINER_NAME}" "${IMAGE}"
