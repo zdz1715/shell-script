@@ -1,8 +1,6 @@
 # shell-script
 
-## 脚本：
-
-> [docker主机部署平滑重启](./devops/docker/local-smooth-upgrade.sh) 
+## [docker主机部署平滑重启](./devops/docker/local-smooth-upgrade.sh) 
 
 ### 使用方式：
 
