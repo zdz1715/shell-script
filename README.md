@@ -5,7 +5,7 @@
 ### 使用方式：
 
 | 参数 | 描述 | 是否必须 |
-| :----: | :----: | :----: |
+| :---- | :---- | :---- |
 | DOCKER_WAREHOUSE | 镜像仓库 | 是 |
 | DOCKER_TAG | 镜像tag | 是 |
 | DOCKER_RUN_OPTIONS | docker 运行命令，默认只启动容器，没有任何选项 比如："-v project_path:var/www -p 80:80" | 否 |
