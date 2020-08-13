@@ -78,8 +78,9 @@ err_count=0
 
 for f in $conf_list
 do
-  file_count++
-  echo "$f"
+  ((file_count++))
+  echo "$file_count、$f"
+  cat $f
 done
 
 step "result"
