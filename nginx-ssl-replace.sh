@@ -70,8 +70,22 @@ log_info "NGINX_SSL_CERTIFICATE_KEY=${NGINX_SSL_CERTIFICATE_KEY}"
 ## 循环替换目录下配置的ssl路径，如若存在
 conf_list=$(ls "$NGINX_CONF_DIR")
 
+step "开始处理"
+
+file_count=0
+suc_count=0
+err_count=0
+
 for f in $conf_list
 do
-  log_info ""
+  file_count++
   echo "$f"
 done
+
+step "result"
+
+END_TIME=$(date +'%Y-%m-%d %H:%M:%S')
+END_SECONDS=$(date --date="$END_TIME" +%s)
+log_success "执行成功：$((END_SECONDS-START_SECONDS))s，总共处理$file_count条，成功$suc_count条，失败$err_count条"
+
+
