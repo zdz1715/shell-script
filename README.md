@@ -18,9 +18,9 @@
 
 #### 运行命令
 ```shell script
-    export docker_tag=v1.0
-    export docker_warehouse=registry.cn-hangzhou.aliyuncs.com/xx/xx
-    DOCKER_WAREHOUSE=$docker_warehouse DOCKER_TAG=$docker_tag PROJECT_NAME=xx /bin/bash -c "$(curl -s  https://raw.githubusercontent.com/zdz1715/shell-script/master/devops/docker/local-smooth-upgrade.sh)"
+export docker_tag=v1.0
+export docker_warehouse=registry.cn-hangzhou.aliyuncs.com/xx/xx
+DOCKER_WAREHOUSE=$docker_warehouse DOCKER_TAG=$docker_tag PROJECT_NAME=xx /bin/bash -c "$(curl -s  https://raw.githubusercontent.com/zdz1715/shell-script/master/devops/docker/local-smooth-upgrade.sh)"
 ```
 
 #### nginx配置示例
@@ -58,5 +58,5 @@ server {
 
 #### 运行命令
 ```shell script
-    NGINX_CONF_DIR=/etc/nginx/conf.d NGINX_SSL_CERTIFICATE=xx NGINX_SSL_CERTIFICATE_KEY=xx /bin/bash -c "$(curl -s  https://raw.githubusercontent.com/zdz1715/shell-script/master/nginx-ssl-replace.sh)"
+NGINX_CONF_DIR=/etc/nginx/conf.d NGINX_SSL_CERTIFICATE=xx NGINX_SSL_CERTIFICATE_KEY=xx /bin/bash -c "$(curl -s  https://raw.githubusercontent.com/zdz1715/shell-script/master/nginx-ssl-replace.sh)"
 ```
