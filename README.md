@@ -45,3 +45,18 @@ server {
 
 `172.168.0.4` 为容器ip，直接反向代理容器内部端口，容器端口不要绑定到宿主机端口。此举可能会导致新容器端口冲突，启动失败
 
+## [nginx ssl证书批量替换](./nginx-ssl-replace.sh)
+ 
+### 使用方式：
+
+| 参数 | 描述 | 是否必须 |
+| :---- | :---- | :---- |
+| NGINX_CONF_DIR | nginx配置目录 | 是 |
+| NGINX_CONF_BACKUP_DIR | nginx配置备份目录，默认`/tmp/nginx-ssl-replace-conf-backup` | 否 |
+| NGINX_SSL_CERTIFICATE | 公钥路径 | 是 |
+| NGINX_SSL_CERTIFICATE_KEY | 私钥路径 | 是 |
+
+#### 运行命令
+```shell script
+    NGINX_CONF_DIR=/etc/nginx/conf.d NGINX_SSL_CERTIFICATE=xx NGINX_SSL_CERTIFICATE_KEY=xx /bin/bash -c "$(curl -s  https://raw.githubusercontent.com/zdz1715/shell-script/master/nginx-ssl-replace.sh)"
+```
