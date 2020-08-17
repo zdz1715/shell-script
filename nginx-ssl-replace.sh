@@ -139,7 +139,7 @@ step "result"
 
 END_TIME=$(date +'%Y-%m-%d %H:%M:%S')
 END_SECONDS=$(date --date="$END_TIME" +%s)
-log_success "执行成功：$((END_SECONDS-START_SECONDS))s，总共处理$file_count条，成功$suc_count条，失败$err_count条"
+log_success "执行完毕：$((END_SECONDS-START_SECONDS))s，总共处理$file_count条，成功$suc_count条，失败$err_count条"
 
 step "nginx 配置检测"
 nginx -t
