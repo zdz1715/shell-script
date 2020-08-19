@@ -116,6 +116,7 @@ log_info "LOCK_IMAGE_FILE=${LOCK_IMAGE_FILE}"
 log_info "LOCK_CONTAINER_FILE=${LOCK_CONTAINER_FILE}"
 log_info "CURRENT_IMAGE=${CURRENT_IMAGE}"
 log_info "CURRENT_CONTAINER_NAME=${CURRENT_CONTAINER_NAME}"
+log_info "DOCKER_RUN_OPTIONS=${DOCKER_RUN_OPTIONS}"
 
 if [[ ! -d "${ROOT_DIR}" ]]; then
   log_command "mkdir ${ROOT_DIR}"
@@ -147,6 +148,7 @@ fi
 
 if ! log_command "$DOCKER_RUN_COMMAND"; then
   log_error "镜像运行失败"
+  docker_rm "${CONTAINER_NAME}" "${IMAGE}"
   exit 1
 fi
 
@@ -181,22 +183,22 @@ if [[ -n "${NGINX_CONFIG_FILE}" ]]; then
       fi
 
       log_command "tee $NGINX_CONFIG_FILE <<EOF
-          server {
-            listen $NGINX_INI_PORT;
+server {
+    listen $NGINX_INI_PORT;
 
-            server_name _;
+    server_name _;
 
-            location / {
-                proxy_pass http://${APP_CONTAINER_IP}/;
-            }
+    location / {
+        proxy_pass http://${APP_CONTAINER_IP}/;
+    }
 
-            location ~ /\.(?!well-known).* {
-                deny all;
-            }
-            location ~ /\.ht {
-                deny all;
-            }
-        }
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+    location ~ /\.ht {
+        deny all;
+    }
+}
 EOF"
   else
 
