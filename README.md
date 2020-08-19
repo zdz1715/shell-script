@@ -8,6 +8,8 @@
 | :---- | :---- | :---- |
 | DOCKER_WAREHOUSE | 镜像仓库 | 是 |
 | DOCKER_TAG | 镜像tag | 是 |
+| DOCKER_USER | 私有仓库用户名base64编码 | 否 |
+| DOCKER_PWD | 私有仓库密码base64编码 | 否 | 
 | DOCKER_RUN_OPTIONS | docker 运行命令，默认只启动容器，没有任何选项 比如："-v project_path:var/www -p 80:80" | 否 |
 | PROJECT_NAME | 项目名称 | 是 |
 | ROOT_DIR | 构建信息存储路径，默认：`/srv/docker-flow` | 否 |
@@ -15,6 +17,8 @@
 | NGINX_INI_PORT | nginx配置初始化的端口，默认80 | 否 |
 | CURRENT_CONTAINER_NAME | 若使用脚本前已经运行了容器，需要传入当前容器的名称，才能替换nginx里的容器ip | 否 |
 | CURRENT_IMAGE | 若使用脚本前已经运行了容器，需要传入当前镜像的名称 | 否 |
+
+**私有仓库的用户名和密码只作用于本次部署，部署完成或失败的时候会退出登录信息**
 
 #### 运行命令
 ```shell script

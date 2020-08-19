@@ -9,6 +9,25 @@ docker_rm()
 {
   log_command "docker rm -f $1"
   log_command "docker rmi $2"
+  docker_logout
+}
+
+docker_login()
+{
+  if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_PWD" ]; then
+    DOCKER_USER=$(echo "$DOCKER_USER" | base64 -d)
+    DOCKER_PWD=$(echo "$DOCKER_PWD" | base64 -d)
+
+#    echo "'$DOCKER_PWD'" |docker login --username "$DOCKER_USER" --password-stdin "$DOCKER_WAREHOUSE"
+    log_command "echo '$DOCKER_PWD' |docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"
+  fi
+}
+
+docker_logout()
+{
+  if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_PWD" ]; then
+      docker logout "$DOCKER_WAREHOUSE"
+  fi
 }
 
 step()
@@ -110,6 +129,8 @@ fi
 
 
 step "拉取最新镜像"
+# 登录docker
+docker_login
 
 if ! log_command "docker pull ${IMAGE}"; then
   log_error "镜像拉取失败"
@@ -237,6 +258,8 @@ if [[ -n "${CURRENT_IMAGE}" ]]; then
 fi
 
 step "result"
+# 退出docker
+docker_logout
 
 END_TIME=$(date +'%Y-%m-%d %H:%M:%S')
 END_SECONDS=$(date --date="$END_TIME" +%s)
