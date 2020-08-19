@@ -18,8 +18,7 @@ docker_login()
     DOCKER_USER=$(echo "$DOCKER_USER" | base64 -d)
     DOCKER_PWD=$(echo "$DOCKER_PWD" | base64 -d)
 
-#    echo "'$DOCKER_PWD'" |docker login --username "$DOCKER_USER" --password-stdin "$DOCKER_WAREHOUSE"
-    log_command "echo '$DOCKER_PWD' |docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"
+    bash -c "echo '$DOCKER_PWD' | docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"
   fi
 }
 
@@ -258,7 +257,6 @@ if [[ -n "${CURRENT_IMAGE}" ]]; then
 fi
 
 step "result"
-# 退出docker
 docker_logout
 
 END_TIME=$(date +'%Y-%m-%d %H:%M:%S')
