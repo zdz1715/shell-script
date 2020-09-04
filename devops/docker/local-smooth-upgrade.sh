@@ -18,7 +18,14 @@ docker_login()
     DOCKER_USER=$(echo "$DOCKER_USER" | base64 -d)
     DOCKER_PWD=$(echo "$DOCKER_PWD" | base64 -d)
 
-    bash -c "echo '$DOCKER_PWD' | docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"
+    if bash -c "echo '$DOCKER_PWD' | docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"; then
+        log_info "docker登录成功"
+      elif bash -c "docker login --username $DOCKER_USER --password '$DOCKER_PWD' $DOCKER_WAREHOUSE"; then
+        log_info "docker登录成功"
+      else
+        log_error "docker登录失败"
+        exit 1
+    fi
   fi
 }
 
