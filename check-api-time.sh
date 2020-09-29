@@ -87,7 +87,7 @@ total_time=0
 
 for (( i=1; i<="$CURL_COUNT";i++ ));
 do
-  temp_result=($(curl -o /dev/null -k -g -H "$CURL_HEADER" -d "$CURL_DATA" -X "$CURL_METHOD" -s -w "%{http_code} %{time_total}" "$CURL_URL"))
+  temp_result=($(curl -o /dev/null -k -g -H "$CURL_HEADER" -d "$CURL_DATA" -X "$CURL_METHOD" -sS -w "%{http_code} %{time_total}" "$CURL_URL"))
   temp_time=${temp_result[1]}
   echo ">>$i 状态码：${temp_result[0]}，响应时间：${temp_time}s"
   [[ $CURL_COUNT -gt 1 ]] && sleep "${CURL_SLEEP}s"
