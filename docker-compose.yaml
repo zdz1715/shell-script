@@ -1,0 +1,6 @@
+version: "3"
+services:
+  shell-app:
+    image: zdzserver/shell-script
+    volumes:
+    - ./:/shells

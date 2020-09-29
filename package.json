@@ -1,0 +1,21 @@
+{
+  "name": "shell-script",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "docker-build": "docker build -t zdzserver/shell-script .",
+    "docker-push": "docker push zdzserver/shell-script",
+    "docker-run": "docker-compose up -d"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zdz1715/shell-script.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zdz1715/shell-script/issues"
+  },
+  "homepage": "https://github.com/zdz1715/shell-script#readme"
+}
