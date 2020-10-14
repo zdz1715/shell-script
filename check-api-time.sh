@@ -3,6 +3,8 @@
 [[ -z "$CURL_METHOD" ]] && CURL_METHOD=GET
 [[ -z "$CURL_COUNT" ]] && CURL_COUNT=1
 [[ -z "$CURL_SLEEP" ]] && CURL_SLEEP=1
+[[ -z "$CURL_USE_MS" ]] && CURL_USE_MS=0
+
 
 ERROR() {
   echo "[ERROR] $*" >&2 && exit 1
@@ -13,6 +15,7 @@ INFO() {
 }
 
 SUCCESS() {
+
   echo "[SUCCESS] $*"
 }
 
@@ -27,10 +30,11 @@ usage() {
           --header string           请求header
           --data string             请求数据
           --sleep int               间隔时间（秒），默认：1s
+          --ms                      使用毫秒
     "
 }
 
-TEMP=$(getopt -o h --long help,count:,url:,method:,data:,sleep: -- "$@" 2>/dev/null)
+TEMP=$(getopt -o h --long help,count:,url:,method:,data:,sleep:,ms -- "$@" 2>/dev/null)
 [ $? != 0 ]  && usage && exit 1
 
 eval set -- "${TEMP}"
@@ -64,6 +68,9 @@ while :; do
       fi
       CURL_SLEEP="$2"; shift 2
       ;;
+    --ms)
+      CURL_USE_MS=1; shift 1
+      ;;
     --)
       shift
       ;;
@@ -85,15 +92,31 @@ INFO "method=$CURL_METHOD"
 times=()
 total_time=0
 
+if [[ $CURL_USE_MS = 1 ]]; then
+  CURL_TIME_UNIT='毫秒'
+else
+  CURL_TIME_UNIT='秒'
+fi
+
 for (( i=1; i<="$CURL_COUNT";i++ ));
 do
   temp_result=($(curl -o /dev/null -k -g -H "$CURL_HEADER" -d "$CURL_DATA" -X "$CURL_METHOD" -sS -w "%{http_code} %{time_total}" "$CURL_URL"))
   temp_time=${temp_result[1]}
-  echo ">>$i 状态码：${temp_result[0]}，响应时间：${temp_time}s"
+  if [[ $CURL_USE_MS = 1 ]]; then
+    temp_time_value=$(awk 'BEGIN{printf("%.2f", "'$temp_time'" * 1000)}')
+  else
+    temp_time_value=$temp_time
+  fi
+  echo ">>$i 状态码：${temp_result[0]}，响应时间：${temp_time_value}${CURL_TIME_UNIT}"
   [[ $CURL_COUNT -gt 1 ]] && sleep "${CURL_SLEEP}s"
   total_time=$(awk 'BEGIN{print "'$total_time'" + "'$temp_time'" }')
 done
 
 avg_time=$(awk 'BEGIN{print "'$total_time'" / "'$CURL_COUNT'" }')
 
-SUCCESS "总用时：${total_time}s，次数：$CURL_COUNT，平均响应：${avg_time}s"
+if [[ $CURL_USE_MS = 1 ]]; then
+  avg_time=$(awk 'BEGIN{printf("%.2f", "'$avg_time'" * 1000)}')
+  total_time=$(awk 'BEGIN{printf("%.2f", "'$total_time'" * 1000)}')
+fi
+
+SUCCESS "总用时：${total_time}${CURL_TIME_UNIT}，次数：$CURL_COUNT，平均响应：${avg_time}${CURL_TIME_UNIT}"
