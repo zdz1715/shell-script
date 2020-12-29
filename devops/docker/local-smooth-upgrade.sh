@@ -20,11 +20,11 @@ docker_login()
 
     if bash -c "echo '$DOCKER_PWD' | docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"; then
         log_info "docker登录成功"
-      elif bash -c "docker login --username $DOCKER_USER --password '$DOCKER_PWD' $DOCKER_WAREHOUSE"; then
-        log_info "docker登录成功"
-      else
-        log_error "docker登录失败"
-        exit 1
+    elif bash -c "docker login --username $DOCKER_USER --password '$DOCKER_PWD' $DOCKER_WAREHOUSE"; then
+      log_info "docker登录成功"
+    else
+      log_error "docker登录失败"
+      exit 1
     fi
   fi
 }
@@ -91,6 +91,8 @@ export CONTAINER_NAME=${PROJECT_NAME}_${DOCKER_TAG}
 export LOCK_DIR=${ROOT_DIR}/.lock
 export LOCK_IMAGE_FILE=${LOCK_DIR}/${PROJECT_NAME}_image.lock
 export LOCK_CONTAINER_FILE=${LOCK_DIR}/${PROJECT_NAME}_container.lock
+export NGINX_BACKUP_DIR=${ROOT_DIR}/nginx-backup
+export NGINX_CONFIG_INIT=0
 
 
 
@@ -132,6 +134,7 @@ fi
 if [[ ! -d "${LOCK_DIR}" ]]; then
   log_command "mkdir ${LOCK_DIR}"
 fi
+
 
 
 
@@ -183,12 +186,16 @@ log_info "APP_CONTAINER_IP=${APP_CONTAINER_IP}"
 
 if [[ -n "${NGINX_CONFIG_FILE}" ]]; then
   step "NGINX配置：${NGINX_CONFIG_FILE}"
+  if [[ ! -d "${NGINX_BACKUP_DIR}" ]]; then
+    log_command "mkdir ${NGINX_BACKUP_DIR}"
+  fi
+
   # 若是没有则生成配置文件
   if [[ ! -f ${NGINX_CONFIG_FILE} ]]; then
       if [[ -z ${NGINX_INI_PORT} ]]; then
         NGINX_INI_PORT=80
       fi
-
+      NGINX_CONFIG_INIT=1
       log_command "tee $NGINX_CONFIG_FILE <<EOF
 server {
     listen $NGINX_INI_PORT;
@@ -208,7 +215,7 @@ server {
 }
 EOF"
   else
-
+    log_command "cp ${NGINX_CONFIG_FILE} ${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE}"
     if [[ -z "${CURRENT_CONTAINER_NAME}" ]] || [[ -z "${CURRENT_IMAGE}" ]]; then
       log_error "获取不到CURRENT_CONTAINER_NAME、CURRENT_IMAGE变量，请手动传入"
       docker_rm "${CONTAINER_NAME}" "${IMAGE}"
@@ -239,6 +246,10 @@ EOF"
   if ! nginx -t >/dev/null 2>&1; then
     # 删除容器
     docker_rm "${CONTAINER_NAME}" "${IMAGE}"
+    # 恢复以前的nginx配置
+    log_command "rm -rf $NGINX_CONFIG_FILE"
+    NGINX_FILE_BACKUP="${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE}"
+    [[ -f "${NGINX_FILE_BACKUP}" ]] && log_command "cp ${NGINX_FILE_BACKUP} ${NGINX_CONFIG_FILE}"
     exit 1
   fi
 
