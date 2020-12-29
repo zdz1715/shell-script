@@ -215,7 +215,8 @@ server {
 }
 EOF"
   else
-    log_command "cp ${NGINX_CONFIG_FILE} ${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE}"
+    NGINX_FILE_BACKUP="${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE##*/}"
+    log_command "cp ${NGINX_CONFIG_FILE} ${NGINX_FILE_BACKUP}"
     if [[ -z "${CURRENT_CONTAINER_NAME}" ]] || [[ -z "${CURRENT_IMAGE}" ]]; then
       log_error "获取不到CURRENT_CONTAINER_NAME、CURRENT_IMAGE变量，请手动传入"
       docker_rm "${CONTAINER_NAME}" "${IMAGE}"
@@ -248,8 +249,7 @@ EOF"
     docker_rm "${CONTAINER_NAME}" "${IMAGE}"
     # 恢复以前的nginx配置
     log_command "rm -rf $NGINX_CONFIG_FILE"
-    NGINX_FILE_BACKUP="${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE}"
-    [[ -f "${NGINX_FILE_BACKUP}" ]] && log_command "cp ${NGINX_FILE_BACKUP} ${NGINX_CONFIG_FILE}"
+    [[ "$NGINX_CONFIG_INIT" == 0 ]] && [[ -f "${NGINX_FILE_BACKUP}" ]] && log_command "cp ${NGINX_FILE_BACKUP} ${NGINX_CONFIG_FILE}"
     exit 1
   fi
 

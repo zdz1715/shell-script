@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "docker-build": "docker build -t zdzserver/shell-script .",
-    "docker-push": "docker push zdzserver/shell-script",
-    "docker-run": "docker-compose up -d"
+    "docker-compose-up": "docker-compose up -d",
+    "docker-compose-down": "docker-compose down",
+    "docker-compose-exec": "docker-compose exec shell-app /bin/bash"
   },
   "repository": {
     "type": "git",

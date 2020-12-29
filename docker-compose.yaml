@@ -1,6 +1,8 @@
 version: "3"
 services:
   shell-app:
-    image: zdzserver/shell-script
+    image: zdzserver/docker-runtime:ubuntu
+    working_dir: /shells
     volumes:
     - ./:/shells
+    command: ["tail", "-f"]
