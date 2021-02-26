@@ -17,7 +17,6 @@ docker_login()
   if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_PWD" ]; then
     DOCKER_USER=$(echo "$DOCKER_USER" | base64 -d)
     DOCKER_PWD=$(echo "$DOCKER_PWD" | base64 -d)
-
     if bash -c "echo '$DOCKER_PWD' | docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"; then
         log_info "docker登录成功"
     elif bash -c "docker login --username $DOCKER_USER --password '$DOCKER_PWD' $DOCKER_WAREHOUSE"; then
@@ -82,13 +81,13 @@ if [[ -z "${PROJECT_NAME}" ]]; then
 fi
 # 构建信息存储路径
 if [[ -z "${ROOT_DIR}" ]]; then
-  ROOT_DIR=/srv/docker-flow
+  ROOT_DIR=/home/.docker-flow
 fi
 
 
 export IMAGE=${DOCKER_WAREHOUSE}:${DOCKER_TAG}
 export CONTAINER_NAME=${PROJECT_NAME}_${DOCKER_TAG}
-export LOCK_DIR=${ROOT_DIR}/.lock
+export LOCK_DIR=${ROOT_DIR}/lock
 export LOCK_IMAGE_FILE=${LOCK_DIR}/${PROJECT_NAME}_image.lock
 export LOCK_CONTAINER_FILE=${LOCK_DIR}/${PROJECT_NAME}_container.lock
 export NGINX_BACKUP_DIR=${ROOT_DIR}/nginx-backup
@@ -113,6 +112,9 @@ if [[ -f "${LOCK_CONTAINER_FILE}" ]]; then
   fi
 fi
 
+# nginx 变量名不能用中划线
+PROJECT_NAME=${PROJECT_NAME//-/_}
+
 step "初始化"
 log_info "ROOT_DIR=${ROOT_DIR}"
 log_info "DOCKER_WAREHOUSE=${DOCKER_WAREHOUSE}"
@@ -126,6 +128,7 @@ log_info "LOCK_CONTAINER_FILE=${LOCK_CONTAINER_FILE}"
 log_info "CURRENT_IMAGE=${CURRENT_IMAGE}"
 log_info "CURRENT_CONTAINER_NAME=${CURRENT_CONTAINER_NAME}"
 log_info "DOCKER_RUN_OPTIONS=${DOCKER_RUN_OPTIONS}"
+
 
 if [[ ! -d "${ROOT_DIR}" ]]; then
   log_command "mkdir ${ROOT_DIR}"
@@ -196,14 +199,15 @@ if [[ -n "${NGINX_CONFIG_FILE}" ]]; then
         NGINX_INI_PORT=80
       fi
       NGINX_CONFIG_INIT=1
-      log_command "tee $NGINX_CONFIG_FILE <<EOF
+tee "$NGINX_CONFIG_FILE" <<EOF
 server {
     listen $NGINX_INI_PORT;
 
     server_name _;
 
     location / {
-        proxy_pass http://${APP_CONTAINER_IP}/;
+        set \$docker_${PROJECT_NAME} ${APP_CONTAINER_IP};
+        proxy_pass http://\$docker_${PROJECT_NAME}/;
     }
 
     location ~ /\.(?!well-known).* {
@@ -213,7 +217,7 @@ server {
         deny all;
     }
 }
-EOF"
+EOF
   else
     NGINX_FILE_BACKUP="${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE##*/}"
     log_command "cp ${NGINX_CONFIG_FILE} ${NGINX_FILE_BACKUP}"
@@ -234,8 +238,7 @@ EOF"
       exit 1
     fi
 
-    log_command "sed -i \"s/${CURRENT_CONTAINER_IP}/${APP_CONTAINER_IP}/g\" ${NGINX_CONFIG_FILE}"
-
+    log_command "sed -i 's|\<\(set\s*\$docker_${PROJECT_NAME}\s*\)\>.*|\1 ${APP_CONTAINER_IP};|' ${NGINX_CONFIG_FILE}"
     log_command "cat $NGINX_CONFIG_FILE"
   fi
 
