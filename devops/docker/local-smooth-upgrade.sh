@@ -200,7 +200,6 @@ if [[ -n "${NGINX_CONFIG_FILE}" ]]; then
 server {
     listen $NGINX_INI_PORT;
 
-    server_name _;
 
     location / {
         proxy_pass http://${APP_CONTAINER_IP}/;

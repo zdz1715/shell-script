@@ -15,8 +15,8 @@ docker_rm()
 docker_login()
 {
   if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_PWD" ]; then
-    DOCKER_USER=$(echo "$DOCKER_USER" | base64 -d)
-    DOCKER_PWD=$(echo "$DOCKER_PWD" | base64 -d)
+    DOCKER_USER=$(echo -n "${DOCKER_USER}"|base64 -d)
+    DOCKER_PWD=$(echo -n "$DOCKER_PWD" | base64 -d)
     if bash -c "echo '$DOCKER_PWD' | docker login --username $DOCKER_USER --password-stdin $DOCKER_WAREHOUSE"; then
         log_info "docker登录成功"
     elif bash -c "docker login --username $DOCKER_USER --password '$DOCKER_PWD' $DOCKER_WAREHOUSE"; then
@@ -88,32 +88,29 @@ fi
 export IMAGE=${DOCKER_WAREHOUSE}:${DOCKER_TAG}
 export CONTAINER_NAME=${PROJECT_NAME}_${DOCKER_TAG}
 export LOCK_DIR=${ROOT_DIR}/lock
-export LOCK_IMAGE_FILE=${LOCK_DIR}/${PROJECT_NAME}_image.lock
-export LOCK_CONTAINER_FILE=${LOCK_DIR}/${PROJECT_NAME}_container.lock
 export NGINX_BACKUP_DIR=${ROOT_DIR}/nginx-backup
 export NGINX_CONFIG_INIT=0
+export LOCK_FILE=${LOCK_DIR}/${PROJECT_NAME}.lock
 
+# 载入锁文件
+if [[ -f "${LOCK_FILE}" ]];then
+  # shellcheck source=src/util.sh
+  . "${LOCK_FILE}"
 
-
-# 检测锁文件
-if [[ -f "${LOCK_IMAGE_FILE}" ]]; then
-  CURRENT_IMAGE=$(cat "${LOCK_IMAGE_FILE}")
-  if [ "${IMAGE}" == "${CURRENT_IMAGE}" ]; then
+   if [ "${IMAGE}" == "${CURRENT_IMAGE}" ]; then
     log_error "镜像已经是最新版"
     exit 1
   fi
-fi
 
-if [[ -f "${LOCK_CONTAINER_FILE}" ]]; then
-  CURRENT_CONTAINER_NAME=$(cat "${LOCK_CONTAINER_FILE}")
   if [ "${CONTAINER_NAME}" == "${CURRENT_CONTAINER_NAME}" ]; then
     log_error "容器已经是最新版"
     exit 1
   fi
 fi
 
-# nginx 变量名不能用中划线
-PROJECT_NAME=${PROJECT_NAME//-/_}
+# 兼容v1版本
+
+
 
 step "初始化"
 log_info "ROOT_DIR=${ROOT_DIR}"
@@ -124,9 +121,9 @@ log_info "IMAGE=${IMAGE}"
 log_info "CONTAINER_NAME=${CONTAINER_NAME}"
 log_info "LOCK_DIR=${LOCK_DIR}"
 log_info "LOCK_IMAGE_FILE=${LOCK_IMAGE_FILE}"
-log_info "LOCK_CONTAINER_FILE=${LOCK_CONTAINER_FILE}"
 log_info "CURRENT_IMAGE=${CURRENT_IMAGE}"
 log_info "CURRENT_CONTAINER_NAME=${CURRENT_CONTAINER_NAME}"
+log_info "CURRENT_CONTAINER_IP=${CURRENT_CONTAINER_IP}"
 log_info "DOCKER_RUN_OPTIONS=${DOCKER_RUN_OPTIONS}"
 
 
@@ -203,11 +200,8 @@ tee "$NGINX_CONFIG_FILE" <<EOF
 server {
     listen $NGINX_INI_PORT;
 
-    server_name _;
-
     location / {
-        set \$docker_${PROJECT_NAME} ${APP_CONTAINER_IP};
-        proxy_pass http://\$docker_${PROJECT_NAME}/;
+        proxy_pass http://${APP_CONTAINER_IP}/;
     }
 
     location ~ /\.(?!well-known).* {
@@ -221,24 +215,29 @@ EOF
   else
     NGINX_FILE_BACKUP="${NGINX_BACKUP_DIR}/${NGINX_CONFIG_FILE##*/}"
     log_command "cp ${NGINX_CONFIG_FILE} ${NGINX_FILE_BACKUP}"
-    if [[ -z "${CURRENT_CONTAINER_NAME}" ]] || [[ -z "${CURRENT_IMAGE}" ]]; then
-      log_error "获取不到CURRENT_CONTAINER_NAME、CURRENT_IMAGE变量，请手动传入"
-      docker_rm "${CONTAINER_NAME}" "${IMAGE}"
-      exit 1
-    fi
 
-    log_command "CURRENT_CONTAINER_IP=\$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${CURRENT_CONTAINER_NAME})" 1
-    CURRENT_CONTAINER_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' "${CURRENT_CONTAINER_NAME}")
-
-    log_info "CURRENT_CONTAINER_IP=${CURRENT_CONTAINER_IP}"
-
+    # 先获取lock的ip，获取不到取当前容器的ip
     if [[ -z "${CURRENT_CONTAINER_IP}" ]]; then
-      log_error "获取不到当前容器运行的ip"
-      docker_rm "${CONTAINER_NAME}" "${IMAGE}"
-      exit 1
+      if [[ -z "${CURRENT_CONTAINER_NAME}" ]] || [[ -z "${CURRENT_IMAGE}" ]]; then
+        log_error "获取不到CURRENT_CONTAINER_NAME、CURRENT_IMAGE变量，请手动传入"
+        docker_rm "${CONTAINER_NAME}" "${IMAGE}"
+        exit 1
+      fi
+
+      log_command "CURRENT_CONTAINER_IP=\$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${CURRENT_CONTAINER_NAME})" 1
+      CURRENT_CONTAINER_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' "${CURRENT_CONTAINER_NAME}")
+
+      log_info "CURRENT_CONTAINER_IP=${CURRENT_CONTAINER_IP}"
+
+      if [[ -z "${CURRENT_CONTAINER_IP}" ]]; then
+        log_error "获取不到当前容器运行的ip"
+        docker_rm "${CONTAINER_NAME}" "${IMAGE}"
+        exit 1
+      fi
     fi
 
-    log_command "sed -i 's|\<\(set\s*\$docker_${PROJECT_NAME}\s*\)\>.*|\1 ${APP_CONTAINER_IP};|' ${NGINX_CONFIG_FILE}"
+    log_command "sed -i \"s/${CURRENT_CONTAINER_IP}/${APP_CONTAINER_IP}/g\" ${NGINX_CONFIG_FILE}"
+
     log_command "cat $NGINX_CONFIG_FILE"
   fi
 
@@ -264,8 +263,12 @@ fi
 
 step "生成锁文件"
 
-log_command "echo ${IMAGE} > ${LOCK_IMAGE_FILE}"
-log_command "echo ${CONTAINER_NAME} > ${LOCK_CONTAINER_FILE}"
+tee "${LOCK_FILE}" <<EOF
+CURRENT_IMAGE='${IMAGE}'
+CURRENT_CONTAINER_NAME='${CONTAINER_NAME}'
+CURRENT_CONTAINER_IP='${APP_CONTAINER_IP}'
+EOF
+
 
 
 
